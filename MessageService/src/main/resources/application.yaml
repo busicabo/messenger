@@ -1,0 +1,75 @@
+server:
+  port: 8082                     # порт приложения
+  servlet:
+    context-path: /              # общий префикс приложения
+  error:
+    include-message: always      # добавлять message в error response
+    include-binding-errors: always # добавлять ошибки валидации в ответ
+
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  application:
+    name: mescat
+  datasource:
+    url: jdbc:postgresql://localhost:5435/postgres  # JDBC URL PostgreSQL
+    username: postgres            # пользователь БД
+    password: postgres          # пароль БД
+    driver-class-name: org.postgresql.Driver # драйвер PostgreSQL
+    hikari:
+      pool-name: app-pool         # имя пула соединений
+      maximum-pool-size: 10       # максимум соединений в пуле
+      minimum-idle: 2             # минимум idle-соединений
+      connection-timeout: 15000   # ожидание соединения из пула, мс
+      idle-timeout: 300000        # сколько idle соединение живет, мс
+      max-lifetime: 1200000       # максимальная жизнь соединения, мс
+
+  jpa:
+    open-in-view: false           # отключает Open Session in View
+    show-sql: false               # логировать SQL
+    hibernate:
+      ddl-auto: validate          # validate | update | create | create-drop | none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect # dialect PostgreSQL
+        format_sql: true          # красиво форматировать SQL в логах
+        jdbc:
+          batch_size: 50          # batch insert/update
+        order_inserts: true       # группировать INSERT
+        order_updates: true       # группировать UPDATE
+
+  mvc:
+    problemdetails:
+      enabled: true               # RFC7807 Problem Details для ошибок
+    format:
+      date: iso                   # LocalDate в ISO формате
+      date-time: iso              # LocalDateTime в ISO формате
+      time: iso                   # LocalTime в ISO формате
+
+  jackson:
+    datatype:
+      datetime:
+        write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+    default-property-inclusion: non_null
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:start.sql
+
+logging:
+  level:
+    org.springframework.web: INFO # логи Spring MVC
+    org.hibernate.SQL: DEBUG      # SQL Hibernate
+    org.hibernate.orm.jdbc.bind: TRACE # bind-параметры Hibernate
+
+app:
+  max-active-key: 3
+  security:
+    jwt:
+      secret: "my-super-secret-key-my-super-secret-key-my-super-secret-key"
+      access-token-expiration: 900000      # 15 минут в миллисекундах
+      refresh-token-expiration: 604800000  # 7 дней в миллисекундах

@@ -1,0 +1,56 @@
+package ru.mescat.message.service;
+
+
+import org.springframework.stereotype.Service;
+import ru.mescat.message.dto.ChatUserDto;
+import ru.mescat.message.entity.ChatEntity;
+import ru.mescat.message.entity.ChatUserEntity;
+import ru.mescat.message.repository.ChatUserRepository;
+
+import java.util.List;
+import java.util.UUID;
+
+@Service
+public class ChatUserService {
+    private ChatUserRepository repository;
+
+    public ChatUserService(ChatUserRepository repository){
+        this.repository=repository;
+    }
+
+    public ChatUserEntity save(ChatUserEntity chatUserEntity) {
+        return repository.save(chatUserEntity);
+    }
+
+    public ChatUserEntity findById(Long id) {
+        return repository.findById(id).orElse(null);
+    }
+
+    public List<ChatUserEntity> findAll() {
+        return repository.findAll();
+    }
+
+    public List<ChatUserEntity> findAllByUserId(UUID userId) {
+        return repository.findAllByUserId(userId);
+    }
+
+    public List<ChatEntity> findAllChatsByUserId(UUID userId) {
+        return repository.findAllChatsByUserId(userId);
+    }
+
+    public boolean existsById(Long id) {
+        return repository.existsById(id);
+    }
+
+    public boolean existsByChatIdAndUserId(Long chatId, UUID userId) {
+        return repository.existsByChat_ChatIdAndUserId(chatId, userId);
+    }
+
+    public void deleteById(Long id) {
+        repository.deleteById(id);
+    }
+
+    public List<ChatUserDto> findAllChatUsersByChatIds(List<Long> chatIds,UUID noTargetUser){
+        return repository.findAllChatUsersByChatIds(chatIds, noTargetUser);
+    }
+}

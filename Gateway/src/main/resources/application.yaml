@@ -1,0 +1,18 @@
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  application:
+    name: mescat
+
+server:
+  port: 8080
+  forward-headers-strategy: framework
+
+app:
+  security:
+    jwt:
+      secret: "my-super-secret-key-my-super-secret-key-my-super-secret-key"
+      access-token-expiration: 900000      # 15 минут в миллисекундах
+      refresh-token-expiration: 604800000  # 7 дней в миллисекундах

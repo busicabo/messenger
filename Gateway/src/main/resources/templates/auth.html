@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Вход</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f8; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: white; padding: 32px; border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); width: 360px; }
+        h1 { margin-top: 0; margin-bottom: 24px; text-align: center; }
+        .field { margin-bottom: 16px; }
+        label { display: block; margin-bottom: 6px; font-size: 14px; color: #444; }
+        input { width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #d0d7de; border-radius: 10px; font-size: 14px; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 10px; background: #2563eb; color: white; font-size: 15px; cursor: pointer; }
+        button:hover { background: #1d4ed8; }
+        .error { color: #dc2626; margin-top: 12px; text-align: center; font-size: 14px; }
+        .success { color: #16a34a; margin-top: 12px; text-align: center; font-size: 14px; }
+        .link { margin-top: 16px; text-align: center; }
+        .link a { text-decoration: none; color: #2563eb; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>Вход</h1>
+
+    <form id="loginForm">
+        <div class="field">
+            <label for="username">Логин</label>
+            <input id="username" type="text" required>
+        </div>
+
+        <div class="field">
+            <label for="password">Пароль</label>
+            <input id="password" type="password" required>
+        </div>
+
+        <button type="submit">Войти</button>
+    </form>
+
+    <div id="message"></div>
+
+    <div class="link">
+        Нет аккаунта? <a href="/auth/reg">Регистрация</a>
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById("loginForm");
+    const message = document.getElementById("message");
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        message.className = "";
+        message.textContent = "";
+
+        try {
+            const response = await fetch("/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    username: document.getElementById("username").value.trim(),
+                    password: document.getElementById("password").value
+                })
+            });
+
+            const text = await response.text();
+
+            if (!response.ok) {
+                message.className = "error";
+                message.textContent = text || "Ошибка входа";
+                return;
+            }
+
+            message.className = "success";
+            message.textContent = text || "Успешный вход";
+            window.location.href = "/message";
+        } catch (error) {
+            message.className = "error";
+            message.textContent = "Сервер недоступен";
+        }
+    });
+</script>
+</body>
+</html>
