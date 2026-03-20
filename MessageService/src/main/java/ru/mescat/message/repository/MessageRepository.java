@@ -53,4 +53,5 @@ public interface MessageRepository extends JpaRepository<MessageEntity, Long> {
             "WHERE m.chat.chatId = :chatId " +
             "ORDER BY m.createdAt DESC")
     MessageEntity findLatestMessageByChatId(Long chatId);
+
 }

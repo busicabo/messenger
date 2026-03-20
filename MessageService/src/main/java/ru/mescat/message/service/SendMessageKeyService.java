@@ -66,4 +66,6 @@ public class SendMessageKeyService {
     public void deleteByUserIdAndUserTargetId(UUID userId, UUID userTargetId) {
         sendMessageKeyRepository.deleteByUserIdAndUserTargetId(userId, userTargetId);
     }
+
+
 }

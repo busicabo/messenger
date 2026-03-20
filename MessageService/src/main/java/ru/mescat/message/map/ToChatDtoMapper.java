@@ -2,10 +2,12 @@ package ru.mescat.message.map;
 
 import org.springframework.stereotype.Component;
 import ru.mescat.message.dto.ChatDto;
-import ru.mescat.message.dto.ChatUserDto;
+import ru.mescat.message.dto.auxiliary.ChatUserDto;
 import ru.mescat.message.entity.ChatUserEntity;
+import ru.mescat.message.entity.MessageEntity;
 import ru.mescat.message.entity.enums.ChatType;
 import ru.mescat.message.service.ChatUserService;
+import ru.mescat.message.service.MessageService;
 import ru.mescat.user.dto.User;
 import ru.mescat.user.service.UserService;
 
@@ -20,20 +22,22 @@ public class ToChatDtoMapper {
 
     private final UserService userService;
     private final ChatUserService chatUserService;
+    private MessageService messageService;
 
-    public ToChatDtoMapper(UserService userService, ChatUserService chatUserService) {
+    public ToChatDtoMapper(UserService userService, ChatUserService chatUserService,MessageService messageService) {
+        this.messageService=messageService;
         this.chatUserService = chatUserService;
         this.userService = userService;
     }
 
-    public List<ChatDto> convert(List<ChatUserEntity> chatUserEntities, UUID noTargetUser) {
+    public List<ChatDto> convert(List<ChatUserEntity> chatUserEntities, UUID userMain) {
         List<ChatDto> chatDtos = new ArrayList<>();
-        chatDtos.addAll(personalConvert(chatUserEntities, noTargetUser));
-        chatDtos.addAll(groupConvert(chatUserEntities));
+        chatDtos.addAll(personalConvert(chatUserEntities, userMain));
+        chatDtos.addAll(groupConvert(chatUserEntities, userMain));
         return chatDtos;
     }
 
-    public List<ChatDto> personalConvert(List<ChatUserEntity> chatUserEntities, UUID noTargetUser) {
+    public List<ChatDto> personalConvert(List<ChatUserEntity> chatUserEntities, UUID userMain) {
         List<ChatUserEntity> personalChat = chatUserEntities.stream()
                 .filter(c -> c.getChat().getChatType() == ChatType.PERSONAL)
                 .toList();
@@ -46,9 +50,9 @@ public class ToChatDtoMapper {
                 .map(c -> c.getChat().getChatId())
                 .toList();
 
-        List<ChatUserDto> chatUserDtos = chatUserService.findAllChatUsersByChatIds(chatIds, noTargetUser);
+        List<ChatUserDto> chatUserDtos = chatUserService.findAllChatUsersByChatIds(chatIds, userMain);
 
-        if (chatUserDtos.isEmpty()) {
+        if (chatUserDtos ==null || chatUserDtos.isEmpty()) {
             return List.of();
         }
 
@@ -60,6 +64,8 @@ public class ToChatDtoMapper {
         List<User> users = userService.findAllByIds(userIds);
 
         List<ChatDto> result = new ArrayList<>();
+
+        List<MessageEntity> messageEntities = messageService.getLastNMessagesForEachUserChat(userMain, 1);
 
         for (ChatUserEntity chatUserEntity : personalChat) {
             Long currentChatId = chatUserEntity.getChat().getChatId();
@@ -82,21 +88,36 @@ public class ToChatDtoMapper {
                 continue;
             }
 
+            byte[] message = null;
+            String encryptName = null;
+
+            if(messageEntities==null){
+                MessageEntity messageEntity = messageEntities.stream()
+                        .filter(m -> m.getChat().getChatId().equals(currentChatId))
+                        .findFirst().orElse(null);
+                if(messageEntity!=null){
+                    message=messageEntity.getMessage();
+                    encryptName=messageEntity.getEncryptionName();
+                }
+            }
+
             result.add(new ChatDto(
                     currentChatId,
                     chatUserEntity.getChat().getChatType(),
                     user.getUsername(),
                     user.getAvatarUrl(),
-                    user.isOnline(),
-                    user.getId()
+                    message,
+                    encryptName
             ));
         }
 
         return result;
     }
 
-    public List<ChatDto> groupConvert(List<ChatUserEntity> chatUserEntities) {
-        return chatUserEntities.stream()
+    public List<ChatDto> groupConvert(List<ChatUserEntity> chatUserEntities, UUID userMain) {
+        List<MessageEntity> messageEntities = messageService.getLastNMessagesForEachUserChat(userMain, 1);
+
+        List<ChatDto> result = chatUserEntities.stream()
                 .filter(c -> c.getChat().getChatType() == ChatType.GROUP)
                 .map(c -> new ChatDto(
                         c.getChat().getChatId(),
@@ -105,5 +126,27 @@ public class ToChatDtoMapper {
                         c.getChat().getAvatarUrl()
                 ))
                 .toList();
+
+        if(messageEntities==null){
+            return result;
+        }
+
+        for(ChatDto chatDto: result){
+            Long chatId = chatDto.getChatId();
+
+            MessageEntity message = messageEntities.stream()
+                    .filter(m -> m.getChat().getChatId().equals(chatId))
+                    .findFirst()
+                    .orElse(null);
+
+            if(message==null){
+                continue;
+            }
+
+            chatDto.setLastMessage(message.getMessage());
+            chatDto.setEncryptName(message.getEncryptionName());
+        }
+
+        return result;
     }
 }

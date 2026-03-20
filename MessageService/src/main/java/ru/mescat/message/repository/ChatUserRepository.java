@@ -3,9 +3,10 @@ package ru.mescat.message.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import ru.mescat.message.dto.ChatUserDto;
+import ru.mescat.message.dto.auxiliary.ChatUserDto;
 import ru.mescat.message.entity.ChatEntity;
 import ru.mescat.message.entity.ChatUserEntity;
+import ru.mescat.message.entity.enums.ChatType;
 
 import java.util.List;
 import java.util.UUID;
@@ -23,7 +24,7 @@ public interface ChatUserRepository extends JpaRepository<ChatUserEntity, Long> 
     boolean existsByChat_ChatIdAndUserId(Long chatId, UUID userId);
 
     @Query("""
-        select distinct new ru.mescat.message.dto.ChatUserDto(cu.userId, cu.chat.chatId)
+        select distinct new ru.mescat.message.dto.auxiliary.ChatUserDto(cu.userId, cu.chat.chatId)
         from ChatUserEntity cu
         where cu.chat.chatId in :chatIds
           and cu.userId <> :noTarget
@@ -32,4 +33,19 @@ public interface ChatUserRepository extends JpaRepository<ChatUserEntity, Long> 
             @Param("chatIds") List<Long> chatIds,
             @Param("noTarget") UUID noTarget
     );
+
+    @Query("""
+        select distinct cu1.chat
+        from ChatUserEntity cu1
+        join ChatUserEntity cu2 on cu1.chat = cu2.chat
+        where cu1.userId = :currentUserId
+          and cu2.userId = :targetUserId
+          and cu1.chat.chatType = :chatType
+        """)
+    ChatEntity findPersonalChatBetween(
+            @Param("currentUserId") UUID currentUserId,
+            @Param("targetUserId") UUID targetUserId,
+            @Param("chatType") ChatType chatType
+    );
+
 }

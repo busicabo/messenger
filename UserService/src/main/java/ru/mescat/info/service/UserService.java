@@ -72,6 +72,10 @@ public class UserService {
         return userRepository.findByUsername(username).orElse(null);
     }
 
+    public UUID getIdByUsername(String username){
+        return userRepository.getIdByUsername(username);
+    }
+
     public UserEntity createNewUser(String username, String password){
         UserEntity entity = new UserEntity(
                 UUID.randomUUID(),

@@ -1,4 +1,4 @@
-package ru.mescat.message.dto;
+package ru.mescat.message.dto.auxiliary;
 
 import lombok.*;
 

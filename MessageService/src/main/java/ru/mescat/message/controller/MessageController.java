@@ -1,6 +1,7 @@
 package ru.mescat.message.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import ru.mescat.message.dto.MessageDto;
 import ru.mescat.message.entity.MessageEntity;
@@ -20,9 +21,10 @@ public class MessageController {
         this.messageService=messageService;
     }
 
-    @GetMapping("/getLastMessages/{userId}/{count}")
-    public ResponseEntity<List<MessageDto>> getLastMessage(@PathVariable UUID userId, @PathVariable Integer count){
-        if(userId==null || count==null){
+    @GetMapping("/getLastMessages/{count}")
+    public ResponseEntity<List<MessageDto>> getLastMessage(@PathVariable Integer count){
+        UUID userId = UUID.fromString(SecurityContextHolder.getContext().getAuthentication().getName());
+        if(count==null){
             return ResponseEntity.notFound().build();
         }
         List<MessageEntity> messages = messageService.getLastNMessagesForEachUserChat(userId, count);
@@ -34,7 +36,7 @@ public class MessageController {
     }
 
     @GetMapping("/getMessageInChatWithLimit/{chatId}/{count}")
-    public ResponseEntity<List<MessageDto>> getMessageInChatWithLimit(@PathVariable Long messageId, @PathVariable Integer count){
+    public ResponseEntity<List<MessageEntity>> getMessageInChatWithLimit(@PathVariable Long messageId, @PathVariable Integer count){
         if(messageId==null || count==null){
             return ResponseEntity.notFound().build();
         }
@@ -43,6 +45,8 @@ public class MessageController {
             return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.ok(messages.stream().map(MessageEntityMessageDtoMapper::convert).toList());
+        return ResponseEntity.ok(messages);
     }
+
+
 }

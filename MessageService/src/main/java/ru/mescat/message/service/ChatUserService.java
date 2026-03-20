@@ -2,9 +2,10 @@ package ru.mescat.message.service;
 
 
 import org.springframework.stereotype.Service;
-import ru.mescat.message.dto.ChatUserDto;
+import ru.mescat.message.dto.auxiliary.ChatUserDto;
 import ru.mescat.message.entity.ChatEntity;
 import ru.mescat.message.entity.ChatUserEntity;
+import ru.mescat.message.entity.enums.ChatType;
 import ru.mescat.message.repository.ChatUserRepository;
 
 import java.util.List;
@@ -53,4 +54,9 @@ public class ChatUserService {
     public List<ChatUserDto> findAllChatUsersByChatIds(List<Long> chatIds,UUID noTargetUser){
         return repository.findAllChatUsersByChatIds(chatIds, noTargetUser);
     }
+
+    public ChatEntity findPersonalBetween(UUID user1, UUID user2, ChatType chatType){
+        return repository.findPersonalChatBetween(user1,user2,chatType);
+    }
+
 }

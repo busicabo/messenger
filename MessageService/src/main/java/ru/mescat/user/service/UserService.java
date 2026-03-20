@@ -5,6 +5,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 import ru.mescat.user.dto.User;
 import ru.mescat.message.exception.RemoteServiceException;
@@ -35,6 +36,8 @@ public class UserService {
             String message = e.getResponseBodyAsString();
 
             throw new RemoteServiceException(status, message);
+        } catch (RestClientException e) {
+            throw new RemoteServiceException(503, "UserService unavailable: " + e.getMessage());
         }
     }
 
@@ -50,6 +53,8 @@ public class UserService {
             String message = e.getResponseBodyAsString();
 
             throw new RemoteServiceException(status, message);
+        } catch (RestClientException e) {
+            throw new RemoteServiceException(503, "UserService unavailable: " + e.getMessage());
         }
     }
 
@@ -64,6 +69,8 @@ public class UserService {
             String message = e.getResponseBodyAsString();
 
             throw new RemoteServiceException(status, message);
+        } catch (RestClientException e) {
+            throw new RemoteServiceException(503, "UserService unavailable: " + e.getMessage());
         }
     }
 
@@ -82,6 +89,8 @@ public class UserService {
             String message = e.getResponseBodyAsString();
 
             throw new RemoteServiceException(status, message);
+        } catch (RestClientException e) {
+            throw new RemoteServiceException(503, "UserService unavailable: " + e.getMessage());
         }
     }
 
@@ -98,6 +107,8 @@ public class UserService {
             String message = e.getResponseBodyAsString();
 
             throw new RemoteServiceException(status, message);
+        } catch (RestClientException e) {
+            throw new RemoteServiceException(503, "UserService unavailable: " + e.getMessage());
         }
     }
 
@@ -113,6 +124,8 @@ public class UserService {
             String message = e.getResponseBodyAsString();
 
             throw new RemoteServiceException(status, message);
+        } catch (RestClientException e) {
+            throw new RemoteServiceException(503, "UserService unavailable: " + e.getMessage());
         }
     }
 
@@ -130,6 +143,8 @@ public class UserService {
             String message = e.getResponseBodyAsString();
 
             throw new RemoteServiceException(status, message);
+        } catch (RestClientException e) {
+            throw new RemoteServiceException(503, "UserService unavailable: " + e.getMessage());
         }
     }
 
@@ -147,6 +162,8 @@ public class UserService {
             String message = e.getResponseBodyAsString();
 
             throw new RemoteServiceException(status, message);
+        } catch (RestClientException e) {
+            throw new RemoteServiceException(503, "UserService unavailable: " + e.getMessage());
         }
     }
 
@@ -164,6 +181,8 @@ public class UserService {
             String message = e.getResponseBodyAsString();
 
             throw new RemoteServiceException(status, message);
+        } catch (RestClientException e) {
+            throw new RemoteServiceException(503, "UserService unavailable: " + e.getMessage());
         }
     }
 
@@ -181,6 +200,23 @@ public class UserService {
             String message = e.getResponseBodyAsString();
 
             throw new RemoteServiceException(status, message);
+        } catch (RestClientException e) {
+            throw new RemoteServiceException(503, "UserService unavailable: " + e.getMessage());
+        }
+    }
+
+    public UUID getIdByUsername(String username){
+        try{
+            return restClient.get()
+                    .uri("/user/{username}/getId",username)
+                    .retrieve()
+                    .body(UUID.class);
+        } catch (RestClientResponseException e){
+            int status = e.getStatusCode().value();
+            String message = e.getResponseBodyAsString();
+            throw new RemoteServiceException(status, message);
+        } catch (RestClientException e) {
+            throw new RemoteServiceException(503, "UserService unavailable: " + e.getMessage());
         }
     }
 }

@@ -95,4 +95,18 @@ public class UserController {
         }
         return ResponseEntity.ok(users);
     }
+
+    @GetMapping("/{username}/getId")
+    public ResponseEntity<UUID> getIdByUsername(@PathVariable String username){
+        if(username==null){
+            return ResponseEntity.notFound().build();
+        }
+        UUID userId = userService.getIdByUsername(username);
+
+        if(userId==null){
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(userId);
+    }
 }

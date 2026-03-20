@@ -53,4 +53,10 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
     int updateBlockedById(@Param("userId") UUID userId,
                           @Param("blocked") boolean blocked);
 
+    @Query("""
+            SELECT u.id FROM UserEntity u
+            WHERE u.username = :username
+            """)
+    UUID getIdByUsername(String username);
+
 }

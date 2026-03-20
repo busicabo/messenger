@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.mescat.message.dto.ChatDto;
 import ru.mescat.message.map.UserChatDtoMap;
+import ru.mescat.user.dto.User;
 import ru.mescat.user.service.UserService;
 
 import java.util.List;
@@ -16,8 +17,10 @@ import java.util.List;
 public class SearchController {
 
     private final UserService userService;
+    private final UserChatDtoMap userChatDtoMap;
 
-    public SearchController(UserService userService){
+    public SearchController(UserService userService, UserChatDtoMap userChatDtoMap){
+        this.userChatDtoMap=userChatDtoMap;
         this.userService = userService;
     }
 
@@ -26,7 +29,12 @@ public class SearchController {
         if(username == null || username.isBlank()){
             return ResponseEntity.ok(List.of());
         }
+        List<User> users = userService.findByUsernameContaining(username);
+        if(users==null || users.isEmpty()){
+            return ResponseEntity.ok(List.of());
+        }
+        List<ChatDto> chatDtos = userChatDtoMap.convert(users);
 
-        return ResponseEntity.ok(UserChatDtoMap.convert(userService.findByUsernameContaining(username)));
+        return ResponseEntity.ok(chatDtos != null ? chatDtos : List.of());
     }
 }

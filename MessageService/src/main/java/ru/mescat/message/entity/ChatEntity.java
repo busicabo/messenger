@@ -38,7 +38,6 @@ public class ChatEntity {
     private String avatarUrl;
 
     public ChatEntity(ChatType type, String title){
-        this.chatId = chatId;
         this.chatType=type;
         this.title=title;
     }

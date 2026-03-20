@@ -1,14 +1,20 @@
 package ru.mescat.message.service;
 
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import ru.mescat.message.dto.ChatDto;
 import ru.mescat.message.dto.MessageDto;
+import ru.mescat.message.dto.NewMessageToNewChat;
+import ru.mescat.message.entity.ChatEntity;
 import ru.mescat.message.entity.MessageEntity;
 import ru.mescat.message.entity.enums.ChatType;
 import ru.mescat.message.exception.RemoteServiceException;
 import ru.mescat.message.map.MessageEntityMessageDtoMapper;
 import ru.mescat.message.repository.MessageRepository;
 import ru.mescat.message.websocket.WebSocketService;
+import ru.mescat.user.dto.User;
+import ru.mescat.user.service.UserService;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.Collections;
@@ -21,12 +27,18 @@ public class MessageService {
     private ChatUserService chatUserService;
     private UsersBlackListService blackListService;
     private WebSocketService webSocketService;
+    private ChatService chatService;
+    private UserService userService;
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     public MessageService(MessageRepository messageRepository,
                           ChatUserService chatUserService,
                           UsersBlackListService usersBlackListService,
-                          WebSocketService webSocketService){
+                          WebSocketService webSocketService,
+                          ChatService chatService,
+                          UserService userService){
+        this.userService=userService;
+        this.chatService=chatService;
         this.webSocketService=webSocketService;
         this.blackListService=usersBlackListService;
         this.chatUserService=chatUserService;
@@ -117,5 +129,22 @@ public class MessageService {
 
     public MessageEntity findLatestMessageByChatId(Long chatId){
         return repository.findLatestMessageByChatId(chatId);
+    }
+
+    public ChatDto sendMessageAndCreateChat(NewMessageToNewChat message){
+
+        User user = userService.findById(message.getUserId());
+
+        UUID userId = UUID.fromString(SecurityContextHolder.getContext().getAuthentication().getName());
+        ChatEntity chat = chatUserService.findPersonalBetween(message.getUserId(),userId,ChatType.PERSONAL);
+
+        if(chat==null){
+            chat = new ChatEntity(ChatType.PERSONAL);
+        }
+        sendMessage(new MessageEntity(chat,message.getMessage(),message.getKeyName()));
+
+        return new ChatDto(chat.getChatId(),chat.getChatType(),user.getUsername(),
+                user.getAvatarUrl(),message.getMessage(),message.getKeyName());
+
     }
 }
