@@ -27,17 +27,10 @@ public class ChatUserService {
         return repository.findById(id).orElse(null);
     }
 
-    public List<ChatUserEntity> findAll() {
-        return repository.findAll();
-    }
-
     public List<ChatUserEntity> findAllByUserId(UUID userId) {
         return repository.findAllByUserId(userId);
     }
 
-    public List<ChatEntity> findAllChatsByUserId(UUID userId) {
-        return repository.findAllChatsByUserId(userId);
-    }
 
     public boolean existsById(Long id) {
         return repository.existsById(id);
@@ -57,6 +50,14 @@ public class ChatUserService {
 
     public ChatEntity findPersonalBetween(UUID user1, UUID user2, ChatType chatType){
         return repository.findPersonalChatBetween(user1,user2,chatType);
+    }
+
+    public List<UUID> findAllUserIdNotBlocksByChatId(Long chatId){
+        return repository.findAllUserIdNotBlocksByChatId(chatId);
+    }
+
+    public List<ChatUserEntity> findAllNotBlocksByChatId(Long chatId){
+        return repository.findAllNotBlocksByChatId(chatId);
     }
 
 }

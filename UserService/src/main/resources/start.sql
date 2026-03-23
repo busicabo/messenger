@@ -1,7 +1,8 @@
+create extension if not exists pgcrypto;
+
 create table if not exists users (
-    id uuid primary key,
+    id uuid primary key default gen_random_uuid(),
     username varchar(60) not null unique,
-    email text,
     password text not null,
     blocked boolean not null default false,
     avatar_url TEXT not null DEFAULT 'https://90995c79f2f34c065a0d26c1400cc671.bckt.ru/default-avatar/ChatGPT%20Image%2015%20мар.%202026%20г.%2C%2019_46_55.png',

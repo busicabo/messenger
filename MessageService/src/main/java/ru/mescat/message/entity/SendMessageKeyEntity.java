@@ -1,12 +1,10 @@
 package ru.mescat.message.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.UuidGenerator;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -18,8 +16,17 @@ import java.util.UUID;
 @AllArgsConstructor
 public class SendMessageKeyEntity {
 
+    public SendMessageKeyEntity(UUID userId, byte[] key, UUID publicKey, UUID userTargetId) {
+        this.userId = userId;
+        this.key = key;
+        this.publicKey = publicKey;
+        this.userTargetId = userTargetId;
+    }
+
     @Id
     @Column(name = "id", nullable = false)
+    @UuidGenerator
+    @GeneratedValue
     private UUID id;
 
     @Column(name = "user_id", nullable = false)
@@ -31,8 +38,11 @@ public class SendMessageKeyEntity {
     @Column(name = "public_key", nullable = false)
     private UUID publicKey;
 
-    @Column(name = "user_target_id")
+    @Column(name = "user_target_id", nullable = false)
     private UUID userTargetId;
+
+    @Column(name="encrypt_name", nullable = false)
+    private String encryptName;
 
     @Column(name = "send_at", nullable = false,insertable = false, updatable = false)
     private OffsetDateTime sendAt;

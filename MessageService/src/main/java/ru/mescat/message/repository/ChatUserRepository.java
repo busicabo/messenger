@@ -14,13 +14,6 @@ import java.util.UUID;
 public interface ChatUserRepository extends JpaRepository<ChatUserEntity, Long> {
     List<ChatUserEntity> findAllByUserId(UUID userId);
 
-    @Query("""
-            select cu.chat
-            from ChatUserEntity cu
-            where cu.userId = :userId
-            """)
-    List<ChatEntity> findAllChatsByUserId(@Param("userId") UUID userId);
-
     boolean existsByChat_ChatIdAndUserId(Long chatId, UUID userId);
 
     @Query("""
@@ -47,5 +40,28 @@ public interface ChatUserRepository extends JpaRepository<ChatUserEntity, Long> 
             @Param("targetUserId") UUID targetUserId,
             @Param("chatType") ChatType chatType
     );
+
+    @Query("""
+        select cu.userId
+        from ChatUserEntity cu
+        left join UsersBlackListEntity ub
+            on ub.chat.chatId = cu.chat.chatId
+           and ub.userTarget = cu.userId
+        where cu.chat.chatId = :chatId
+          and ub.id is null
+    """)
+    List<UUID> findAllUserIdNotBlocksByChatId(@Param("chatId") Long chatId);
+
+    @Query("""
+        select cu
+        from ChatUserEntity cu
+        left join UsersBlackListEntity ub
+            on ub.chat.chatId = cu.chat.chatId
+           and ub.userTarget = cu.userId
+        where cu.chat.chatId = :chatId
+          and ub.id is null
+    """)
+    List<ChatUserEntity> findAllNotBlocksByChatId(@Param("chatId") Long chatId);
+
 
 }

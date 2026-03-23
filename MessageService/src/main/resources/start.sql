@@ -1,3 +1,5 @@
+create extension if not exists pgcrypto;
+
 CREATE TABLE IF NOT EXISTS chat (
     chat_id BIGSERIAL PRIMARY KEY,
     chat_type TEXT NOT NULL,
@@ -35,7 +37,8 @@ CREATE TABLE IF NOT EXISTS  message (
 );
 
 CREATE TABLE IF NOT EXISTS send_message_keys (
-    id UUID,
+    id UUID PRIMARY KEY default gen_random_uuid(),
+    encrypt_name TEXT NOT NULL,
     user_id UUID NOT NULL,
     key BYTEA NOT NULL,
     public_key UUID NOT NULL,

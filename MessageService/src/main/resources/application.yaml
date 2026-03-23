@@ -7,6 +7,12 @@ server:
     include-binding-errors: always # добавлять ошибки валидации в ответ
 
 spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    encrypt-keys:
+      topic: "delete-encrypt-keys"
+      group: "delete-encrypt-keys"
+
   data:
     redis:
       host: localhost

@@ -45,6 +45,10 @@ public class UsersBlackListService {
         return repository.findAllByChat_ChatId(chatId);
     }
 
+    public List<UUID> getAllUserIdBlocksByChatId(Long chatId){
+        return repository.getAllUserIdBlocksByChatId(chatId);
+    }
+
     public Optional<UsersBlackListEntity> findBlock(UUID userInitiator, Long chatId, UUID userTarget) {
         return repository.findByUserInitiatorAndChat_ChatIdAndUserTarget(userInitiator, chatId, userTarget);
     }

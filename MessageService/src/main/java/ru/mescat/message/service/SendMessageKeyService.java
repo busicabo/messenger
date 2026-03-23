@@ -1,21 +1,36 @@
 package ru.mescat.message.service;
 
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.mescat.message.dto.RequestEncryptMessageKeyForUser;
+import ru.mescat.message.dto.ResponseEncryptMessageKeyForUser;
+import ru.mescat.message.dto.SendEncryptKeyDto;
+import ru.mescat.message.dto.kafka.KeyDelete;
 import ru.mescat.message.entity.SendMessageKeyEntity;
 import ru.mescat.message.repository.SendMessageKeyRepository;
+import ru.mescat.message.websocket.WebSocketService;
+import tools.jackson.databind.ObjectMapper;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Transactional(readOnly = true)
 public class SendMessageKeyService {
 
     private final SendMessageKeyRepository sendMessageKeyRepository;
+    private final WebSocketService webSocketService;
+    private final ChatUserService chatUserService;
+    private final UsersBlackListService usersBlackListService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public SendMessageKeyService(SendMessageKeyRepository sendMessageKeyRepository) {
+    public SendMessageKeyService(SendMessageKeyRepository sendMessageKeyRepository,
+                                 WebSocketService webSocketService,
+                                 ChatUserService chatUserService,
+                                 UsersBlackListService usersBlackListService) {
+        this.usersBlackListService=usersBlackListService;
+        this.chatUserService=chatUserService;
+        this.webSocketService=webSocketService;
         this.sendMessageKeyRepository = sendMessageKeyRepository;
     }
 
@@ -67,5 +82,47 @@ public class SendMessageKeyService {
         sendMessageKeyRepository.deleteByUserIdAndUserTargetId(userId, userTargetId);
     }
 
+    @Transactional
+    public void deleteAllById(List<KeyDelete> keyDeletes){
+        sendMessageKeyRepository.deleteAllById(keyDeletes.stream().map(k -> k.getKeyId()).toList());
+    }
+
+    public void sendEncryptKey(SendEncryptKeyDto sendEncryptKeyDto){
+        UUID userId = UUID.fromString(SecurityContextHolder.getContext().getAuthentication().getName());
+        if(!chatUserService.existsByChatIdAndUserId(sendEncryptKeyDto.getChatId(),userId)) return;
+
+        sendEncryptKeyDto.setEncryptName(UUID.randomUUID());
+        List<UUID> userIds = chatUserService.findAllUserIdNotBlocksByChatId(sendEncryptKeyDto.getChatId());
+
+        Set<UUID> userIdsSet = new HashSet<>(userIds);
+        List<RequestEncryptMessageKeyForUser> verifiedUsers = sendEncryptKeyDto.getRequestEncryptMessageKeyForUsers();
+
+        Iterator<RequestEncryptMessageKeyForUser> iterator = verifiedUsers.iterator();
+
+        while(iterator.hasNext()){
+            RequestEncryptMessageKeyForUser r = iterator.next();
+
+            if(!userIdsSet.contains(r.getUserTarget())){
+                verifiedUsers.remove(r);
+            }
+        }
+
+        List<SendMessageKeyEntity> sendMessageKeyEntities = saveAll(verifiedUsers.stream().map(v -> new SendMessageKeyEntity(
+                userId,v.getKey(),v.getPublicKeyUser(),v.getUserTarget()
+        )).toList());
+
+        if(sendMessageKeyEntities==null){
+            throw new IllegalStateException("Не удалось сохранить в бд!");
+        }
+
+        for(SendMessageKeyEntity m: sendMessageKeyEntities){
+            webSocketService.sendJson(objectMapper.writeValueAsString(new ResponseEncryptMessageKeyForUser(
+                    m.getUserTargetId(),m.getKey(),m.getEncryptName(),m.getPublicKey()
+            )),m.getUserTargetId());
+
+        }
+
+
+    }
 
 }

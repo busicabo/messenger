@@ -1,6 +1,8 @@
 package ru.mescat.message.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import ru.mescat.message.entity.UsersBlackListEntity;
 
 import java.util.List;
@@ -22,4 +24,11 @@ public interface UsersBlackListRepository extends JpaRepository<UsersBlackListEn
     Optional<UsersBlackListEntity> findByUserInitiatorAndChat_ChatIdAndUserTarget(UUID userInitiator, Long chatId, UUID userTarget);
 
     void deleteByUserInitiatorAndChat_ChatIdAndUserTarget(UUID userInitiator, Long chatId, UUID userTarget);
+
+    @Query("""
+            select ubl.userTarget
+            from UserBlackListEntity ubl
+            where ubl.chat.chatId = :chatId
+            """)
+    List<UUID> getAllUserIdBlocksByChatId(@Param("chatId") Long chatId);
 }

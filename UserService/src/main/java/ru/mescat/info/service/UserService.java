@@ -78,11 +78,8 @@ public class UserService {
 
     public UserEntity createNewUser(String username, String password){
         UserEntity entity = new UserEntity(
-                UUID.randomUUID(),
                 username,
-                passwordEncoder.encode(password),
-                false,
-                false
+                passwordEncoder.encode(password)
         );
 
         return save(entity);

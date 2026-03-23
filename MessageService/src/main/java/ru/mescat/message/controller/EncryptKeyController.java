@@ -5,30 +5,27 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import ru.mescat.keyvault.dto.PublicKey;
-import ru.mescat.keyvault.dto.SaveDto;
 import ru.mescat.keyvault.dto.UserPublicKeyDto;
 import ru.mescat.keyvault.service.KeyVaultService;
 import ru.mescat.message.dto.ApiResponse;
 import ru.mescat.message.map.PublicKeyUserPublicKeyDtoMapper;
 import ru.mescat.message.service.CreateKeyVault;
+import ru.mescat.message.service.DeleteSentKeysService;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/message/api")
-public class KeyController {
+@RequestMapping("/message/api/encrypt_key")
+public class EncryptKeyController {
 
     private KeyVaultService keyVaultService;
     private Integer maxActiveKey;
     private CreateKeyVault createKeyVault;
 
-    public KeyController(KeyVaultService keyVaultService,
-                         @Value("${app.max-active-key}")Integer maxActiveKey,
-                         CreateKeyVault createKeyVault){
+    public EncryptKeyController(KeyVaultService keyVaultService,
+                                CreateKeyVault createKeyVault){
         this.createKeyVault=createKeyVault;
-        this.maxActiveKey=maxActiveKey;
         this.keyVaultService=keyVaultService;
     }
 

@@ -1,10 +1,8 @@
 package ru.mescat.info.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.UuidGenerator;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -18,6 +16,8 @@ import java.util.UUID;
 public class UserEntity {
     @Id
     @Column(name = "id")
+    @UuidGenerator
+    @GeneratedValue
     private UUID id;
 
     @Column(name="username", nullable = false, unique = true)
@@ -32,14 +32,18 @@ public class UserEntity {
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private OffsetDateTime createdAt;
 
+    public UserEntity(String username, String password) {
+        this.username = username;
+        this.password = password;
+    }
+
     @Column(name="avatar_url", nullable = false,insertable = false, updatable = false)
     private String avatarUrl;
 
     @Column(name = "online", nullable = false)
     private boolean online;
 
-    public UserEntity(UUID id, String username, String password, boolean blocked, boolean online) {
-        this.id = id;
+    public UserEntity(String username, String password, boolean blocked, boolean online) {
         this.username = username;
         this.password = password;
         this.blocked = blocked;
