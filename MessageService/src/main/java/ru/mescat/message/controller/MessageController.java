@@ -35,7 +35,7 @@ public class MessageController {
         return ResponseEntity.ok(messages.stream().map(MessageEntityMessageDtoMapper::convert).toList());
     }
 
-    @GetMapping("/getMessageInChatWithLimit/{chatId}/{count}")
+    @GetMapping("/getMessageInChatWithLimit/{messageId}/{count}")
     public ResponseEntity<List<MessageEntity>> getMessageInChatWithLimit(@PathVariable Long messageId, @PathVariable Integer count){
         if(messageId==null || count==null){
             return ResponseEntity.notFound().build();
