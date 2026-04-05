@@ -12,6 +12,9 @@ spring:
     encrypt-keys:
       topic: "delete-encrypt-keys"
       group: "delete-encrypt-keys"
+    message-service:
+      topic: "message-service"
+      group: "message-service"
 
   data:
     redis:

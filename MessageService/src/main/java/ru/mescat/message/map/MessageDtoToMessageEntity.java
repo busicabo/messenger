@@ -19,13 +19,11 @@ public class MessageDtoToMessageEntity {
         this.chatService=chatService;
     }
 
-    public MessageEntity convert(MessageDto messageDto){
+    public MessageEntity convert(MessageDto messageDto,UUID userId){
         ChatEntity chat = chatService.findById(messageDto.getChatId());
         if(chat==null){
             throw new ChatNotFoundException("Чат не найден.");
         }
-
-        UUID userId = UUID.fromString(SecurityContextHolder.getContext().getAuthentication().getName());
 
         return new MessageEntity(chat,messageDto.getMessage(),messageDto.getEncryptionName(),userId);
     }

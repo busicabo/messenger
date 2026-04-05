@@ -32,6 +32,12 @@ public class ChatUserEntity {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
+    public ChatUserEntity(ChatEntity chat, UUID userId, String role) {
+        this.chat = chat;
+        this.userId = userId;
+        this.role = role;
+    }
+
     @Column(name = "role", nullable = false)
     private String role;
 

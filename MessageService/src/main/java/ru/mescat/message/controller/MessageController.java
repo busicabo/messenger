@@ -26,23 +26,17 @@ public class MessageController {
         this.messageService = messageService;
     }
 
+    //Получить последние n сообщения каждого чата
     @GetMapping("/getLastMessages/{count}")
-    public ResponseEntity<?> getLastMessage(@PathVariable Integer count) {
+    public ResponseEntity<?> getLastMessage(@RequestHeader("X-User-Id") UUID userId,
+                                            @PathVariable Integer count) {
         if (count == null || count <= 0) {
             return ResponseEntity.badRequest().body("Количество сообщений должно быть больше нуля.");
         }
 
         List<MessageEntity> messages;
         try {
-            messages = messageService.getLastNMessagesForEachUserChat(
-                    UUID.fromString(
-                            org.springframework.security.core.context.SecurityContextHolder
-                                    .getContext()
-                                    .getAuthentication()
-                                    .getName()
-                    ),
-                    count
-            );
+            messages = messageService.getLastNMessagesForEachUserChat(userId, count);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -58,6 +52,9 @@ public class MessageController {
         return ResponseEntity.ok(result);
     }
 
+    //Получить предыдущие n сообщений в отношение
+    // сообщения и чата которому принадлежит это
+    // сообщение(если n отрицательный, то показываються все сообщения после)
     @GetMapping("/getMessageInChatWithLimit/{messageId}/{count}")
     public ResponseEntity<?> getMessageInChatWithLimit(@PathVariable Long messageId,
                                                        @PathVariable Integer count) {
@@ -85,14 +82,16 @@ public class MessageController {
         return ResponseEntity.ok(result);
     }
 
+    //Отправить сообщение
     @PostMapping("/sendMessage")
-    public ResponseEntity<?> sendMessage(@RequestBody MessageDto messageDto) {
+    public ResponseEntity<?> sendMessage(@RequestHeader("X-User-Id") UUID userId,
+                                         @RequestBody MessageDto messageDto) {
         if (messageDto == null) {
             return ResponseEntity.badRequest().body("Сообщение не должно быть пустым.");
         }
 
         try {
-            messageService.sendMessage(messageDto);
+            messageService.sendMessage(userId, messageDto);
             return ResponseEntity.ok("Сообщение успешно отправлено.");
         } catch (ChatNotFoundException | NotFoundException e) {
             return ResponseEntity.status(404).body(e.getMessage());
@@ -107,14 +106,16 @@ public class MessageController {
         }
     }
 
+    //При отправке сообщения пользователю с которым не было чата создаеться новый чат и сообщения.
     @PostMapping("/newMessageAndNewChat")
-    public ResponseEntity<?> newMessageAndNewChat(@RequestBody NewMessageToNewChat newMessageToNewChat) {
+    public ResponseEntity<?> newMessageAndNewChat(@RequestHeader("X-User-Id") UUID userId,
+                                                  @RequestBody NewMessageToNewChat newMessageToNewChat) {
         if (newMessageToNewChat == null) {
             return ResponseEntity.badRequest().body("Тело запроса не должно быть пустым.");
         }
 
         try {
-            return ResponseEntity.ok(messageService.sendMessageAndCreateChat(newMessageToNewChat));
+            return ResponseEntity.ok(messageService.sendMessageAndCreateChat(userId, newMessageToNewChat));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {

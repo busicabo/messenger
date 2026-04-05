@@ -132,17 +132,17 @@ public class UserService {
     public void updatePassword(UUID id, String password) {
         try {
             restClient.patch()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/user/{id}/password")
-                            .queryParam("password", password)
-                            .build(id))
+                    .uri("/user/{id}/password", id)
+                    .contentType(org.springframework.http.MediaType.TEXT_PLAIN)
+                    .body(password)
                     .retrieve()
                     .toBodilessEntity();
+
         } catch (RestClientResponseException e) {
             int status = e.getStatusCode().value();
             String message = e.getResponseBodyAsString();
-
             throw new RemoteServiceException(status, message);
+
         } catch (RestClientException e) {
             throw new RemoteServiceException(503, "UserService unavailable: " + e.getMessage());
         }

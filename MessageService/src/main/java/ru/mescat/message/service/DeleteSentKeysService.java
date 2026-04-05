@@ -39,9 +39,9 @@ public class DeleteSentKeysService {
         acknowledgment.acknowledge();
     }
 
-    public void addKeyInQueue(UUID id) {
+    public void addKeyInQueue(KeyDelete keyDelete) {
         try {
-            var result = kafkaTemplate.send(topic, new KeyDelete(id)).get();
+            var result = kafkaTemplate.send(topic, keyDelete).get();
         } catch (Exception e) {
             throw new RuntimeException("Не удалось отправить ключ на удаление.", e);
         }

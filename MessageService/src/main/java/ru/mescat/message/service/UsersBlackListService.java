@@ -1,7 +1,13 @@
 package ru.mescat.message.service;
 
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import ru.mescat.message.dto.UserBlockDto;
+import ru.mescat.message.entity.ChatEntity;
+import ru.mescat.message.entity.ChatUserEntity;
 import ru.mescat.message.entity.UsersBlackListEntity;
+import ru.mescat.message.exception.ChatNotFoundException;
+import ru.mescat.message.exception.NotFoundException;
 import ru.mescat.message.repository.UsersBlackListRepository;
 
 import java.util.List;
@@ -12,8 +18,14 @@ import java.util.UUID;
 public class UsersBlackListService {
 
     private final UsersBlackListRepository repository;
+    private final ChatUserService chatUserService;
+    private final ChatService chatService;
 
-    public UsersBlackListService(UsersBlackListRepository repository) {
+    public UsersBlackListService(UsersBlackListRepository repository,
+                                 ChatUserService chatUserService,
+                                 ChatService chatService) {
+        this.chatService=chatService;
+        this.chatUserService=chatUserService;
         this.repository = repository;
     }
 
@@ -59,5 +71,35 @@ public class UsersBlackListService {
 
     public void unblock(UUID userInitiator, Long chatId, UUID userTarget) {
         repository.deleteByUserInitiatorAndChat_ChatIdAndUserTarget(userInitiator, chatId, userTarget);
+    }
+
+    public UsersBlackListEntity addBlock(UUID userId, UserBlockDto userBlockDto){
+        ChatEntity chat = chatService.findById(userBlockDto.getChatId());
+
+        if(chat==null){
+            throw new ChatNotFoundException("Чат не найден.");
+        }
+
+        ChatUserEntity initiator = chatUserService.findByUserIdAndChatId(userBlockDto.getChatId(),userId);
+
+        if(initiator==null){
+            throw new NotFoundException("Вы не состоите в данном чате.");
+        }
+
+        ChatUserEntity target= chatUserService.findByUserIdAndChatId(userBlockDto.getChatId(),userBlockDto.getUserId());
+
+        if(target==null){
+            throw new NotFoundException("Этот участник не состоит в чате.");
+        }
+
+        if(!initiator.getRole().equalsIgnoreCase("ADMIN") && !initiator.getRole().equalsIgnoreCase("CREATOR")){
+            throw new AccessDeniedException("Нет прав исключать из группы.");
+        }
+
+        if(target.getRole().equalsIgnoreCase("CREATOR")){
+            throw new AccessDeniedException("Вы не можете исключить создателя группы.");
+        }
+
+        return save(new UsersBlackListEntity(initiator.getUserId(),chat,target.getUserId()));
     }
 }

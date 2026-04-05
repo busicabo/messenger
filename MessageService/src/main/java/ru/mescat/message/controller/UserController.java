@@ -3,7 +3,6 @@ package ru.mescat.message.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.mescat.message.dto.ChatDto;
-import ru.mescat.message.exception.RemoteServiceException;
 import ru.mescat.message.map.UserChatDtoMap;
 import ru.mescat.user.dto.User;
 import ru.mescat.user.service.UserService;
@@ -18,40 +17,42 @@ public class UserController {
     private final UserService userService;
     private final UserChatDtoMap userChatDtoMap;
 
-    public UserController(UserService userService, UserChatDtoMap userChatDtoMap){
-        this.userChatDtoMap=userChatDtoMap;
+    public UserController(UserService userService, UserChatDtoMap userChatDtoMap) {
+        this.userChatDtoMap = userChatDtoMap;
         this.userService = userService;
     }
 
     @GetMapping("/{username}/getId")
-    public ResponseEntity<?> getIdByUsername(@PathVariable String username){
-        if(username==null){
+    public ResponseEntity<?> getIdByUsername(@PathVariable String username) {
+        if (username == null) {
             return ResponseEntity.notFound().build();
         }
 
-        try{
+        try {
             UUID userId = userService.getIdByUsername(username);
-
             return ResponseEntity.ok(userId);
-        } catch (Exception e){
+        } catch (Exception e) {
             return ResponseEntity.status(502).body("Не удалось получить данные от сервера.");
         }
-
     }
 
     @GetMapping("/search_by_username")
-    public ResponseEntity<?> searchByUsername(@RequestParam String username){
-        if(username == null || username.isBlank()){
-            return ResponseEntity.status(400).build();
+    public ResponseEntity<?> searchByUsername(
+            @RequestHeader("X-User-Id") UUID userId,
+            @RequestParam String username) {
+        if (username == null || username.isBlank()) {
+            return ResponseEntity.badRequest().body("Имя пользователя не должно быть пустым.");
         }
+
         List<User> users = userService.findByUsernameContaining(username);
 
-        if(users==null || users.isEmpty()){
+        if (users == null || users.isEmpty()) {
             return ResponseEntity.ok(List.of());
         }
-        List<ChatDto> chatDtos = userChatDtoMap.convert(users);
 
-        if(chatDtos==null){
+        List<ChatDto> chatDtos = userChatDtoMap.convert(users, userId);
+
+        if (chatDtos == null) {
             return ResponseEntity.status(500).body("Не удалось подготовить чаты.");
         }
 

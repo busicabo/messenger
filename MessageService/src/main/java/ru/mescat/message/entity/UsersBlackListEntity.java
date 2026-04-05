@@ -23,6 +23,12 @@ public class UsersBlackListEntity {
     @Column(name = "user_initiator", nullable = false)
     private UUID userInitiator;
 
+    public UsersBlackListEntity(UUID userInitiator, ChatEntity chat, UUID userTarget) {
+        this.userInitiator = userInitiator;
+        this.chat = chat;
+        this.userTarget = userTarget;
+    }
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chat_id", nullable = false)
     private ChatEntity chat;

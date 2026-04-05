@@ -1,6 +1,5 @@
 package ru.mescat.message.service;
 
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.mescat.message.dto.RequestEncryptMessageKeyForUser;
@@ -93,7 +92,7 @@ public class SendMessageKeyService {
     }
 
     @Transactional
-    public void sendEncryptKey(SendEncryptKeyDto sendEncryptKeyDto) {
+    public void sendEncryptKey(UUID userId, SendEncryptKeyDto sendEncryptKeyDto) {
         if (sendEncryptKeyDto == null) {
             throw new IllegalArgumentException("sendEncryptKeyDto не должен быть null.");
         }
@@ -106,8 +105,6 @@ public class SendMessageKeyService {
                 || sendEncryptKeyDto.getRequestEncryptMessageKeyForUsers().isEmpty()) {
             throw new IllegalArgumentException("Список получателей ключей пуст.");
         }
-
-        UUID userId = UUID.fromString(SecurityContextHolder.getContext().getAuthentication().getName());
 
         if (!chatUserService.existsByChatIdAndUserId(sendEncryptKeyDto.getChatId(), userId)) {
             throw new NotFoundException("Группа не найдена.");

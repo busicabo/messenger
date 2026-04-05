@@ -32,11 +32,9 @@ public class UserChatDtoMap {
         this.messageService=messageService;
     }
 
-    public  ChatDto convert(User user){
-        UUID userId;
+    public  ChatDto convert(User user, UUID userId){
         UUID userTarget;
         try{
-            userId = UUID.fromString(SecurityContextHolder.getContext().getAuthentication().getName());
             userTarget = user.getId();
         } catch (IllegalArgumentException e){
             throw new RemoteServiceException(1,"Данные не соответствуют нужному типу!");
@@ -59,8 +57,7 @@ public class UserChatDtoMap {
 
     }
 
-    public List<ChatDto> convert(List<User> users) {
-        UUID userId = UUID.fromString(SecurityContextHolder.getContext().getAuthentication().getName());
+    public List<ChatDto> convert(List<User> users, UUID userId) {
         List<ChatUserEntity> chatUsers = chatUserService.findAllByUserId(userId);
         if (chatUsers == null) {
             return null;

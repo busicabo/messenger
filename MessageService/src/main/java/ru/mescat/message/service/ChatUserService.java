@@ -60,4 +60,8 @@ public class ChatUserService {
         return repository.findAllNotBlocksByChatId(chatId);
     }
 
+    public ChatUserEntity findByUserIdAndChatId(Long chatId,UUID userId){
+        return repository.findByUserIdAndChatId(chatId,userId);
+    }
+
 }

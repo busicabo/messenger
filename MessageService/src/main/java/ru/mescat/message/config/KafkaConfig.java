@@ -28,6 +28,8 @@ public class KafkaConfig {
     private String bootstrapServers;
     @Value("${spring.kafka.encrypt-keys.group}")
     private String encryptKeyGroup;
+    @Value("${spring.kafka.message-service.group}")
+    private String messageServiceGroup;
 
     @Bean
     public ProducerFactory<String, KeyDelete> producerFactory() {
@@ -51,7 +53,7 @@ public class KafkaConfig {
     }
 
     @Bean
-    public ConsumerFactory<String, KeyDelete> consumerFactory() {
+    public ConsumerFactory<String, KeyDelete> consumerFactoryEncryptKeyDelete() {
         Map<String, Object> props = new HashMap<>();
 
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
@@ -73,7 +75,7 @@ public class KafkaConfig {
         ConcurrentKafkaListenerContainerFactory<String, KeyDelete> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
 
-        factory.setConsumerFactory(consumerFactory());
+        factory.setConsumerFactory(consumerFactoryEncryptKeyDelete());
 
         factory.setBatchListener(true);
 
@@ -85,6 +87,27 @@ public class KafkaConfig {
         // сколько максимум ждать данные в одном poll
         factory.getContainerProperties().setPollTimeout(3_000L);
         return factory;
+    }
+
+    @Bean
+    public ProducerFactory<String, KeyDelete> producerFactoryMessage() {
+        Map<String, Object> props = new HashMap<>();
+
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        props.put(ProducerConfig.ACKS_CONFIG, "all");
+        props.put(ProducerConfig.RETRIES_CONFIG, 3);
+        props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
+        props.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 120000);
+        props.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 5);
+        props.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
+        return new DefaultKafkaProducerFactory<>(props);
+    }
+
+    @Bean("kafkaTemplateMessage")
+    public KafkaTemplate<String, KeyDelete> kafkaTemplateMessage() {
+        return new KafkaTemplate<>(producerFactory());
     }
 
 

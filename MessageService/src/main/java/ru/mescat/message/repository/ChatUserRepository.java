@@ -63,5 +63,12 @@ public interface ChatUserRepository extends JpaRepository<ChatUserEntity, Long> 
     """)
     List<ChatUserEntity> findAllNotBlocksByChatId(@Param("chatId") Long chatId);
 
+    @Query("""
+            SELECT cu from ChatUserEntity cu
+            where cu.chat.chatId = :chatId
+            and cu.userId = :userId
+            """)
+    ChatUserEntity findByUserIdAndChatId(@Param("chatId") Long chatId, @Param("userId") UUID userId);
+
 
 }

@@ -34,6 +34,12 @@ public class ChatEntity {
     @Column(name = "title")
     private String title;
 
+    public ChatEntity(ChatType chatType, String title, String avatarUrl) {
+        this.chatType = chatType;
+        this.title = title;
+        this.avatarUrl = avatarUrl;
+    }
+
     @Column(name="avatar_url",nullable = false,insertable = false, updatable = false)
     private String avatarUrl;
 

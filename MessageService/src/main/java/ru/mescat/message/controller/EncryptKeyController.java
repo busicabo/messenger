@@ -1,8 +1,6 @@
 package ru.mescat.message.controller;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import ru.mescat.keyvault.dto.NewPrivateKeyDto;
 import ru.mescat.keyvault.dto.PublicKey;
@@ -34,11 +32,12 @@ public class EncryptKeyController {
         this.keyVaultService = keyVaultService;
     }
 
+    //Создание публичного ключа
     @PostMapping("/new_key")
-    public ResponseEntity<?> addNewKey(@RequestBody byte[] publicKey,
-                                       Authentication authentication) {
+    public ResponseEntity<?> addNewKey(@RequestHeader("X-User-Id") UUID userId,
+                                       @RequestBody byte[] publicKey) {
         try {
-            createKeyVault.addNewKey(publicKey, authentication);
+            createKeyVault.addNewKey(userId, publicKey);
             return ResponseEntity.ok("Ключ успешно создан.");
         } catch (ValidationException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -51,6 +50,7 @@ public class EncryptKeyController {
         }
     }
 
+    //Получение публичных ключей каждого пользователя из списка.
     @PostMapping("/byUserIdIn")
     public ResponseEntity<?> getAllKeys(@RequestBody List<UUID> uuids) {
         try {
@@ -69,26 +69,11 @@ public class EncryptKeyController {
         }
     }
 
-    @GetMapping("/byUserId")
-    public ResponseEntity<?> getKeyByUsername() {
-        try {
-            UUID userId = UUID.fromString(SecurityContextHolder.getContext().getAuthentication().getName());
-            PublicKey key = keyVaultService.getKeyByUserId(userId.toString());
 
-            if (key == null) {
-                return ResponseEntity.notFound().build();
-            }
-
-            return ResponseEntity.ok(key);
-        } catch (RemoteServiceException e) {
-            return ResponseEntity.status(e.getStatus()).body(e.getResponseBody());
-        }
-    }
-
+    //Получить публичный ключ по айди пользователя
     @GetMapping("/")
-    public ResponseEntity<?> getKey() {
+    public ResponseEntity<?> getKey(@RequestHeader("X-User-Id") UUID userId) {
         try {
-            UUID userId = UUID.fromString(SecurityContextHolder.getContext().getAuthentication().getName());
             PublicKey key = keyVaultService.getKeyByUserId(userId.toString());
 
             if (key == null) {
@@ -101,10 +86,11 @@ public class EncryptKeyController {
         }
     }
 
-    @GetMapping("/new_private_key")
-    public ResponseEntity<?> getNewPrivateKeyEntities() {
-        UUID userId = UUID.fromString(SecurityContextHolder.getContext().getAuthentication().getName());
+    //При создание новой сессии создается новый приватный ключ, а старым ключем шифруеться новый ключ и рассылаеться всем
 
+    //Получить все приватные ключи
+    @GetMapping("/new_private_key")
+    public ResponseEntity<?> getNewPrivateKeyEntities(@RequestHeader("X-User-Id") UUID userId) {
         try {
             List<?> result = newPrivateKeyService.findAllByUserId(userId);
             if (result == null || result.isEmpty()) {
@@ -117,10 +103,10 @@ public class EncryptKeyController {
         }
     }
 
+    //Сохранение нового приватного ключа
     @PostMapping("/new_private_key")
-    public ResponseEntity<?> saveNewPrivateKeyEntities(@RequestBody NewPrivateKeyDto newPrivateKeyDto) {
-        UUID userId = UUID.fromString(SecurityContextHolder.getContext().getAuthentication().getName());
-
+    public ResponseEntity<?> saveNewPrivateKeyEntities(@RequestHeader("X-User-Id") UUID userId,
+                                                       @RequestBody NewPrivateKeyDto newPrivateKeyDto) {
         if (newPrivateKeyDto == null) {
             return ResponseEntity.badRequest().body("Тело запроса не должно быть пустым.");
         }

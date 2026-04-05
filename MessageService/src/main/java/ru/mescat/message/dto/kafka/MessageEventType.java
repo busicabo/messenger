@@ -1,0 +1,8 @@
+package ru.mescat.message.dto.kafka;
+
+public enum MessageEventType {
+    SEND,DELETE
+}
+
+
+

@@ -1,23 +1,16 @@
 package ru.mescat.message.controller;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import ru.mescat.message.dto.ApiResponse;
-import ru.mescat.message.dto.ChatDto;
-import ru.mescat.message.dto.NewMessageToNewChat;
-import ru.mescat.message.entity.ChatEntity;
+import ru.mescat.message.dto.*;
 import ru.mescat.message.entity.ChatUserEntity;
-import ru.mescat.message.entity.enums.ChatType;
 import ru.mescat.message.map.ToChatDtoMapper;
 import ru.mescat.message.service.ChatService;
 import ru.mescat.message.service.ChatUserService;
 import ru.mescat.message.service.MessageService;
-import ru.mescat.message.websocket.WebSocketService;
-import ru.mescat.user.dto.User;
+import ru.mescat.message.service.UsersBlackListService;
 import ru.mescat.user.service.UserService;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,42 +18,76 @@ import java.util.UUID;
 @RequestMapping("/api")
 public class ChatController {
 
-    private ChatService chatService;
-    private ChatUserService chatUserService;
-    private UserService userService;
-    private WebSocketService webSocketService;
-    private ToChatDtoMapper toChatDtoMapper;
-    private MessageService messageService;
+    private final ChatService chatService;
+    private final ChatUserService chatUserService;
+    private final UserService userService;
+    private final ToChatDtoMapper toChatDtoMapper;
+    private final MessageService messageService;
+    private final UsersBlackListService usersBlackListService;
 
     public ChatController(ChatService chatService,
                           ChatUserService chatUserService,
                           UserService userService,
-                          WebSocketService webSocketService,
                           ToChatDtoMapper toChatDtoMapper,
-                          MessageService messageService){
-        this.messageService=messageService;
-        this.toChatDtoMapper=toChatDtoMapper;
-        this.webSocketService=webSocketService;
-        this.userService=userService;
-        this.chatService=chatService;
-        this.chatUserService=chatUserService;
+                          MessageService messageService,
+                          UsersBlackListService usersBlackListService) {
+        this.usersBlackListService = usersBlackListService;
+        this.messageService = messageService;
+        this.toChatDtoMapper = toChatDtoMapper;
+        this.userService = userService;
+        this.chatService = chatService;
+        this.chatUserService = chatUserService;
     }
 
+
+    //Получить все чаты
     @GetMapping("/chats")
-    public ResponseEntity<?> getChats(Authentication authentication){
-        UUID userId = UUID.fromString(authentication.getName());
+    public ResponseEntity<?> getChats(@RequestHeader("X-User-Id") UUID userId) {
         List<ChatUserEntity> chats = chatUserService.findAllByUserId(userId);
-        if(chats==null){
+        if (chats == null) {
             return ResponseEntity.notFound().build();
         }
 
-        List<ChatDto> chatDtos = toChatDtoMapper.convert(chats,userId);
-        if(chatDtos==null){
+        List<ChatDto> chatDtos = toChatDtoMapper.convert(chats, userId);
+        if (chatDtos == null) {
             return ResponseEntity.status(500).body("Не удалось распарсить чаты");
         }
 
         return ResponseEntity.ok(chatDtos);
     }
 
+    //создать групповой чат
+    @PostMapping("/group_chat")
+    public ResponseEntity<?> createGroupChat(@RequestHeader("X-User-Id") UUID userId,
+                                             @RequestBody CreateGroupChatDto dto) {
+        if (dto == null) {
+            return ResponseEntity.badRequest().body("Тело запроса не должно быть пустым.");
+        }
 
+        try {
+            return ResponseEntity.ok(chatService.createGroupChat(userId, dto));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Не удалось создать групповой чат.");
+        }
+    }
+
+    //заблокировать пользователя в чате.
+    @PostMapping("/block_user")
+    public ResponseEntity<?> blockUser(@RequestHeader("X-User-Id") UUID userId,
+                                       @RequestBody UserBlockDto userBlockDto) {
+        if (userBlockDto == null) {
+            return ResponseEntity.badRequest().body("Тело запроса не должно быть пустым.");
+        }
+
+        try {
+            usersBlackListService.addBlock(userId, userBlockDto);
+            return ResponseEntity.ok("Пользователь успешно заблокирован.");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Не удалось заблокировать пользователя.");
+        }
+    }
 }

@@ -1,13 +1,11 @@
 package ru.mescat.message.service;
 
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.mescat.message.dto.ChatDto;
-import ru.mescat.message.dto.MessageDto;
-import ru.mescat.message.dto.MessageForUser;
-import ru.mescat.message.dto.NewMessageToNewChat;
+import ru.mescat.message.dto.*;
 import ru.mescat.message.entity.ChatEntity;
 import ru.mescat.message.entity.ChatUserEntity;
 import ru.mescat.message.entity.MessageEntity;
@@ -30,7 +28,6 @@ public class MessageService {
     private MessageRepository repository;
     private ChatUserService chatUserService;
     private UsersBlackListService blackListService;
-    private WebSocketService webSocketService;
     private ChatService chatService;
     private UserService userService;
     private MessageDtoToMessageEntity messageDtoToMessageEntityConvert;
@@ -39,7 +36,6 @@ public class MessageService {
     public MessageService(MessageRepository messageRepository,
                           ChatUserService chatUserService,
                           UsersBlackListService usersBlackListService,
-                          WebSocketService webSocketService,
                           ChatService chatService,
                           UserService userService,
                           MessageDtoToMessageEntity messageDtoToMessageEntity
@@ -47,7 +43,6 @@ public class MessageService {
         this.messageDtoToMessageEntityConvert=messageDtoToMessageEntity;
         this.userService=userService;
         this.chatService=chatService;
-        this.webSocketService=webSocketService;
         this.blackListService=usersBlackListService;
         this.chatUserService=chatUserService;
         this.repository=messageRepository;
@@ -69,9 +64,8 @@ public class MessageService {
         repository.deleteById(messageId);
     }
 
-    public void sendMessage(MessageDto messageDto){
-
-        UUID userId = UUID.fromString(SecurityContextHolder.getContext().getAuthentication().getName());
+    @Transactional
+    public void sendMessage(UUID userId, MessageDto messageDto){
 
         if(!chatUserService.existsByChatIdAndUserId(messageDto.getChatId(),userId)){
             throw new ChatNotFoundException("Чат не существует.");
@@ -81,7 +75,7 @@ public class MessageService {
             throw new UserBlockedException("Вас заблокировали в данном чате.");
         }
 
-        MessageEntity messageEntity = messageDtoToMessageEntityConvert.convert(messageDto);
+        MessageEntity messageEntity = messageDtoToMessageEntityConvert.convert(messageDto, userId);
 
         try{
             messageEntity = repository.save(messageEntity);
@@ -95,13 +89,7 @@ public class MessageService {
 
         MessageForUser message = MessageEntityToMessageForUser.convert(messageEntity);
 
-        String json;
-        try {
-            json = objectMapper.writeValueAsString(message);
-        } catch (Exception e){
-            throw new ParsingException("Не удалось запарсить данные.");
-        }
-        webSocketService.sendToTopic(json,message.getChatId());
+
     }
 
     public List<MessageEntity> getLastNMessagesForEachUserChat(UUID userId, int limit) {
@@ -109,6 +97,43 @@ public class MessageService {
             throw new IllegalArgumentException("Лимит должно быть больше 0.");
         }
         return repository.findLastNMessagesForEachUserChat(userId, limit);
+    }
+
+    public void deleteMessage(DeleteMessageDto deleteMessage, UUID userId){
+        ChatUserEntity chatUserEntity = chatUserService.findByUserIdAndChatId(deleteMessage.getChatId(),userId);
+        if(chatUserEntity==null){
+            throw new ChatNotFoundException("Чат не найден.");
+        }
+
+        MessageEntity message = findById(deleteMessage.getMessageId());
+
+        if(message==null){
+            throw new NotFoundException("Сообщение не найдено.");
+        }
+
+        if(chatUserEntity.getChat().getChatType()==ChatType.PERSONAL){
+            if(!message.getSenderId().equals(userId)){
+                throw new AccessDeniedException("Вы не можете удалить не свое сообщение.");
+            }
+        } else if(chatUserEntity.getChat().getChatType()==ChatType.GROUP){
+            if(!chatUserEntity.getRole().equalsIgnoreCase("ADMIN")
+                    && !chatUserEntity.getRole().equalsIgnoreCase("CREATOR")
+                    && !message.getSenderId().equals(userId)){
+                throw new AccessDeniedException("Вы не можете удалить сообщение.");
+            }
+        }
+
+        deleteById(deleteMessage.getMessageId());
+    }
+
+    public void deleteAllChatInPersonalChat(Long chatId, UUID userId){
+        ChatUserEntity chatUserEntity = chatUserService.findByUserIdAndChatId(chatId,userId);
+
+        if(chatUserEntity==null){
+            throw new ChatNotFoundException("Чат не найден.");
+        }
+
+
     }
 
     @Transactional
@@ -154,7 +179,7 @@ public class MessageService {
     }
 
     @Transactional
-    public ChatDto sendMessageAndCreateChat(NewMessageToNewChat message){
+    public ChatDto sendMessageAndCreateChat(UUID userId,NewMessageToNewChat message){
 
         User user = userService.findById(message.getUserId());
 
@@ -162,7 +187,6 @@ public class MessageService {
             throw new NotFoundException("Пользователь не найден.");
         }
 
-        UUID userId = UUID.fromString(SecurityContextHolder.getContext().getAuthentication().getName());
         ChatEntity chat = chatUserService.findPersonalBetween(message.getUserId(),userId,ChatType.PERSONAL);
 
         if(chat==null){
@@ -172,7 +196,7 @@ public class MessageService {
             chatUserService.save(new ChatUserEntity(chat,user.getId()));
         }
 
-        sendMessage(new MessageDto(chat.getChatId(),message.getMessage(),message.getKeyName()));
+        sendMessage(userId, new MessageDto(chat.getChatId(),message.getMessage(),message.getKeyName()));
 
         return new ChatDto(chat.getChatId(),chat.getChatType(),user.getUsername(),
                 user.getAvatarUrl(),message.getMessage(),message.getKeyName());

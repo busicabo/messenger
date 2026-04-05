@@ -1,6 +1,7 @@
 package ru.mescat.message.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import ru.mescat.message.entity.MessageEntity;
@@ -48,6 +49,9 @@ public interface MessageRepository extends JpaRepository<MessageEntity, Long> {
     List<MessageEntity> findMessagesBefore(@Param("chatId") Long chatId,
                                            @Param("messageId") Long messageId,
                                            org.springframework.data.domain.Pageable pageable);
+
+    @Modifying
+    long deleteByChat_ChatId(Long chatId);
 
 
     MessageEntity findFirstByChat_ChatIdOrderByCreatedAtDesc(Long chatId);
