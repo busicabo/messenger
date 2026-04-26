@@ -262,35 +262,7 @@ public class MessageService {
         long count = repository.countByChat_ChatIdAndEncryptionName(chatId, latestMessage.getEncryptionName());
         return new LatestChatEncryptionUsageDto(chatId, latestMessage.getEncryptionName(), count);
     }
-
-    @Transactional(readOnly = true)
-    public void validateMessageKeyRequest(UUID requesterId,
-                                          Long chatId,
-                                          Long messageId,
-                                          UUID senderId,
-                                          String encryptName) {
-        if (requesterId == null || chatId == null || messageId == null || senderId == null || encryptName == null || encryptName.isBlank()) {
-            throw new IllegalArgumentException("Некорректный запрос ключа сообщения.");
-        }
-        if (requesterId.equals(senderId)) {
-            throw new AccessDeniedException("Нельзя запрашивать ключ у самого себя.");
-        }
-        if (!chatUserService.existsByChatIdAndUserId(chatId, requesterId)
-                || !chatUserService.existsByChatIdAndUserId(chatId, senderId)) {
-            throw new AccessDeniedException("Нет доступа к этому чату.");
-        }
-        boolean messageMatches = repository.existsByMessageIdAndChat_ChatIdAndSenderIdAndEncryptionName(
-                messageId,
-                chatId,
-                senderId,
-                encryptName
-        );
-        if (!messageMatches) {
-            throw new NotFoundException("Сообщение с таким ключом не найдено.");
-        }
-    }
-
-    @Transactional
+@Transactional
     public ChatDto sendMessageAndCreateChat(UUID userId,NewMessageToNewChat message){
         log.info("Запрос на создание личного чата и отправку первого сообщения: initiatorId={}, targetId={}",
                 userId, message.getUserId());

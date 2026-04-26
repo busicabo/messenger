@@ -133,7 +133,7 @@ public class ChatController {
     public ResponseEntity<?> addUserInChat(@RequestHeader("X-User-Id") UUID userId,
                                            @RequestBody AddUserInChatDto dto) {
         try {
-            chatUserService.addNewUserInChat(dto, userId);
+            chatUserService.addNewUserInChat(dto);
             return ResponseEntity.ok().build();
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(403).body(e.getMessage());

@@ -1,4 +1,4 @@
-﻿spring:
+spring:
   data:
     redis:
       host: ${REDIS_HOST:redis}
@@ -32,10 +32,7 @@ services:
 app:
   security:
     jwt:
-      secret: ${JWT_SECRET}
+      secret: ${JWT_SECRET:dev-only-change-me-dev-only-change-me-dev-only-change-me}
       access-token-expiration: 900000
       refresh-token-expiration: 604800000
 
-security:
-  cookies:
-    force-secure: ${AUTH_COOKIE_SECURE:false}

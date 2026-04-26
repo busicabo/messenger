@@ -1,10 +1,10 @@
-﻿server:
+server:
   port: ${SERVER_PORT:8082}
   servlet:
     context-path: /
   error:
-    include-message: never
-    include-binding-errors: never
+    include-message: always
+    include-binding-errors: always
 
 spring:
   kafka:
@@ -88,7 +88,7 @@ app:
   max-active-key: ${MAX_ACTIVE_KEY:3}
   security:
     jwt:
-      secret: ${JWT_SECRET}
+      secret: ${JWT_SECRET:dev-only-change-me-dev-only-change-me-dev-only-change-me}
       access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:900000}
       refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
 

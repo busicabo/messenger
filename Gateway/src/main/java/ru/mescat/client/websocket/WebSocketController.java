@@ -5,12 +5,10 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import ru.mescat.client.dto.ApiResponse;
-import ru.mescat.client.dto.MessageKeyRequestDto;
 import ru.mescat.client.dto.MessageDto;
+import ru.mescat.client.dto.MessageKeyRequestDto;
 import ru.mescat.client.service.MessageServiceProxy;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,20 +43,10 @@ public class WebSocketController {
         UUID requesterId = UUID.fromString(authentication.getName());
         if (request == null
                 || request.getChatId() == null
-                || request.getMessageId() == null
                 || request.getSenderId() == null
                 || request.getEncryptName() == null
                 || request.getEncryptName().isBlank()
                 || requesterId.equals(request.getSenderId())) {
-            return;
-        }
-
-        var validation = proxy.get(buildKeyRequestValidationPath(request), requesterId);
-        if (!validation.getStatusCode().is2xxSuccessful()) {
-            webSocketService.sendToUser(
-                    requesterId,
-                    new ApiResponse(1, "Нельзя запросить ключ для этого сообщения.", false, OffsetDateTime.now())
-            );
             return;
         }
 
@@ -69,12 +57,5 @@ public class WebSocketController {
         payload.put("payload", request);
 
         webSocketService.sendToUser(request.getSenderId(), payload);
-    }
-
-    private String buildKeyRequestValidationPath(MessageKeyRequestDto request) {
-        return "/api/messages/" + request.getMessageId()
-                + "/key-request/validate?chatId=" + request.getChatId()
-                + "&senderId=" + request.getSenderId()
-                + "&encryptName=" + URLEncoder.encode(request.getEncryptName(), StandardCharsets.UTF_8);
     }
 }

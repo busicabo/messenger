@@ -1,4 +1,4 @@
-﻿services:
+services:
   postgres-user:
     image: postgres:16-alpine
     container_name: postgres-user
@@ -192,7 +192,7 @@
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       USER_SERVICE_URL: http://user-service:8081
       KEY_VAULT_SERVICE_URL: http://key-vault-service:8085
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_SECRET: ${JWT_SECRET:-dev-only-change-me-dev-only-change-me-dev-only-change-me}
       JWT_ACCESS_TOKEN_EXPIRATION: ${JWT_ACCESS_TOKEN_EXPIRATION:-900000}
       JWT_REFRESH_TOKEN_EXPIRATION: ${JWT_REFRESH_TOKEN_EXPIRATION:-604800000}
       S3_ENDPOINT: ${S3_ENDPOINT:-https://s3.firstvds.ru}
@@ -234,10 +234,9 @@
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       USER_SERVICE_URL: http://user-service:8081
       MESSAGE_SERVICE_URL: http://message-service:8082
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_SECRET: ${JWT_SECRET:-dev-only-change-me-dev-only-change-me-dev-only-change-me}
       JWT_ACCESS_TOKEN_EXPIRATION: ${JWT_ACCESS_TOKEN_EXPIRATION:-900000}
       JWT_REFRESH_TOKEN_EXPIRATION: ${JWT_REFRESH_TOKEN_EXPIRATION:-604800000}
-      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
     ports:
       - "8080:8080"
     depends_on:

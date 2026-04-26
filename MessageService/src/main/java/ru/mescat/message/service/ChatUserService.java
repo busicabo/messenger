@@ -32,10 +32,10 @@ public class ChatUserService {
                            ChatService chatService,
                            UserService userService,
                            ApplicationEventPublisher applicationEventPublisher) {
-        this.applicationEventPublisher = applicationEventPublisher;
-        this.userService = userService;
-        this.chatService = chatService;
         this.repository = repository;
+        this.chatService = chatService;
+        this.userService = userService;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     public ChatUserEntity save(ChatUserEntity chatUserEntity) {
@@ -85,31 +85,23 @@ public class ChatUserService {
     }
 
     @Transactional
-    public ChatUserEntity addNewUserInChat(AddUserInChatDto dto, UUID initiatorId) {
-        if (dto == null || dto.getChatId() == null || dto.getUserTarget() == null || initiatorId == null) {
-            throw new IllegalArgumentException("Некорректные данные для добавления участника.");
+    public ChatUserEntity addNewUserInChat(AddUserInChatDto dto) {
+        if (dto == null || dto.getChatId() == null || dto.getUserTarget() == null) {
+            throw new IllegalArgumentException("Invalid member add request.");
         }
 
         ChatEntity chat = chatService.findById(dto.getChatId());
         if (chat == null) {
-            throw new ChatNotFoundException("Чат не найден.");
+            throw new ChatNotFoundException("Chat not found.");
         }
 
         if (chat.getChatType() == ChatType.PERSONAL) {
-            throw new AccessDeniedException("В личный диалог нельзя добавлять новых участников.");
-        }
-
-        ChatUserEntity initiator = findByUserIdAndChatId(dto.getChatId(), initiatorId);
-        if (initiator == null) {
-            throw new AccessDeniedException("Нет доступа к этому чату.");
-        }
-        if (!canManageMembers(initiator)) {
-            throw new AccessDeniedException("Добавлять участников могут только администраторы или создатель группы.");
+            throw new AccessDeniedException("Personal chats cannot have extra members.");
         }
 
         User user = userService.findById(dto.getUserTarget());
         if (user == null) {
-            throw new NotFoundException("Пользователь не найден.");
+            throw new NotFoundException("User not found.");
         }
 
         ChatUserEntity existing = findByUserIdAndChatId(dto.getChatId(), user.getId());
@@ -119,32 +111,23 @@ public class ChatUserService {
 
         UserSettings userSettings = userService.getSettingsById(user.getId());
         if (userSettings != null && !userSettings.isAllowAddChat()) {
-            throw new AccessDeniedException("Пользователь запретил добавлять себя в чаты.");
+            throw new AccessDeniedException("User disabled adding to chats.");
         }
 
         return save(new ChatUserEntity(chat, user.getId()));
     }
 
+    @Transactional
     public void deleteUserFromChat(AddUserInChatDto dto, UUID userId) {
-        ChatUserEntity initiator = findByUserIdAndChatId(dto.getChatId(), userId);
-        if (initiator == null) {
-            throw new ChatNotFoundException("Чат не найден.");
+        if (dto == null || dto.getChatId() == null || dto.getUserTarget() == null) {
+            throw new IllegalArgumentException("Invalid member delete request.");
         }
 
         ChatUserEntity target = findByUserIdAndChatId(dto.getChatId(), dto.getUserTarget());
         if (target == null) {
-            throw new NotFoundException("Пользователь не найден в чате.");
-        }
-
-        if (!canManageMembers(initiator) && !userId.equals(dto.getUserTarget())) {
-            throw new AccessDeniedException("Недостаточно прав для удаления участника из чата.");
+            throw new NotFoundException("User is not a chat member.");
         }
 
         deleteById(target.getId());
-    }
-
-    private boolean canManageMembers(ChatUserEntity user) {
-        return user.getRole() != null
-                && ("CREATOR".equalsIgnoreCase(user.getRole()) || "ADMIN".equalsIgnoreCase(user.getRole()));
     }
 }
